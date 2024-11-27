@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex};
-
 use axum::{extract::{ws::{Message, WebSocket}, WebSocketUpgrade}, response::Response, routing::get, Router};
 use futures::{SinkExt, StreamExt};
 use tokio::{io::{AsyncReadExt, AsyncWriteExt}, net::TcpSocket, select};
@@ -30,16 +29,25 @@ async fn handle(socket: WebSocket) {
     tokio::spawn(async move {
 
         while let Some(item) = read_ws.next().await {
-            if let Ok(message) = item {
-                match write_ssh.write(&message.into_data()).await {
-                    Err(e) => {
-                        println!("couldn't write to ssh server: {}", e.to_string());
-                        break;
-                    },
-                    Ok(n) => println!("wrote {} bytes to ssh server", n)
+            match item {
+                Ok(message) => {
+                    match message {
+                        Message::Binary(vec) => {
+                            println!("received: {}", String::from_utf8_lossy(&vec));
+                            if let Err(e) = write_ssh.write(&vec).await {
+                                println!("something went wrong while writing to ssh: {}", e.to_string());
+                            }
+                        },
+                        _ => break
+                    }
+                },
+                Err(e) => {
+                    println!("error on write: {}", e.to_string());
                 }
             }
         }
+
+        println!("stopped writing to ssh");
         
     });
 
@@ -49,23 +57,24 @@ async fn handle(socket: WebSocket) {
         loop {
             match read_ssh.read(&mut buffer).await {
                 Ok(n) => {
-                    if n == 0 {
-                        break;
-                    }
-                    match write_ws.send(Message::Binary(Vec::from(&buffer))).await {
-                        Ok(_) => println!("sent to ws!"),
-                        Err(e) => {
+                    if n > 0 {
+                        if let Err(e) = write_ws.send(Message::Binary(buffer[..n].to_vec())).await {
                             println!("couldn't send to websocket: {}", e);
                             break;
                         }
+                    } else {
+                        println!("ssh closed connection");
+                        break;
                     }
                 }
                 Err(e) => {
-                    println!("{}", e.to_string());
+                    println!("error on read: {}", e.to_string());
                     break;
                 }
             }
         }
+        println!("stopped reading from ssh");
+
     });
     
 }
