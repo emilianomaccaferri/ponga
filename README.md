@@ -1,5 +1,5 @@
 # ponga
-a reimplementation of cloudflare tunnels
+basically a reimplementation of cloudflare tunnels, because i don't want to give my data to a US-based company anymore!
 
 # project status
 
