@@ -7,5 +7,6 @@ edition = "2021"
 futures = "0.3.31"
 futures-channel = "0.3.31"
 futures-util = "0.3.31"
-tokio = { version = "1.41.1", features = ["full"] }
+tokio = { version = "1.41.1", features = ["full", "sync"] }
 tokio-tungstenite = "0.24.0"
+tokio-util = "0.7.12"

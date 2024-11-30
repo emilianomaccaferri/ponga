@@ -36,7 +36,7 @@ async fn handle(socket: WebSocket) {
                         _ => break,
                     }
                 },
-                Err(e) => println!("{}", e.to_string())
+                Err(e) => println!("ws: {}", e.to_string())
             }
         }
     });
@@ -44,16 +44,19 @@ async fn handle(socket: WebSocket) {
     tokio::spawn(async move {
         loop {
             let mut buf = [0u8; 1024];
-            if let Ok(n) = read_ssh.read(&mut buf).await {
-                if n == 0 {
-                    write_ws.close().await
-                        .expect("couldn't close ws connection");
+            match read_ssh.read(&mut buf).await {
+                Ok(n) => {
+                    if n > 0 {
+                        write_ws.send(
+                            Message::Binary(Vec::from(&buf[0..n]))
+                        ).await
+                        .expect("couldnt write to ssh server");
+                    }
+                },
+                Err(e) => {
+                    println!("ssh: {}", e.kind());
                     break;
                 }
-                write_ws.send(
-                    Message::Binary(Vec::from(&buf[0..n]))
-                ).await
-                .expect("couldnt write to ssh server");
             }
         }
     });
