@@ -1,0 +1,9 @@
+[submodule "pongad"]
+	path = pongad
+	url = https://github.com/emilianomaccaferri/pongad
+[submodule "pongaok"]
+	path = pongaok
+	url = https://github.com/emilianomaccaferri/pongaok
+[submodule "pongactl"]
+	path = pongactl
+	url = https://github.com/emilianomaccaferri/pongactl
